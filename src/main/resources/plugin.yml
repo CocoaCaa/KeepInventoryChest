@@ -1,0 +1,15 @@
+main: com.cocoacaa.spigot.keepinventorychest.KeepInventoryChest
+name: KeepInventoryChest
+version: 0.0.1
+description: Keep your inventory into a chest after death!
+api-version: 1.17
+author: CocoaCaa
+commands:
+  keepinventorychest:
+    description: KeepInventoryChest commend
+    usage: 'Usage: /<command>'
+    permission: keepinventorychest.help
+permissions:
+  keepinventorychest.help:
+    description: Help command
+    default: op
