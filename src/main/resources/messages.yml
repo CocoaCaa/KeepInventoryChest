@@ -1,0 +1,2 @@
+cannotCreateChest: '&cNo empty spaces around your last death position, the chest will not create.'
+chestCreated: '&aThe item protect chest has been created at {{location}}!'

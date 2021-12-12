@@ -21,4 +21,13 @@ public class LocationUtils {
         }
         return null;
     }
+
+    public static String getFriendlyString(Location location) {
+        return String.format(
+                "X: %s Y: %s Z: %s",
+                location.getBlockX(),
+                location.getBlockY(),
+                location.getBlockZ()
+        );
+    }
 }

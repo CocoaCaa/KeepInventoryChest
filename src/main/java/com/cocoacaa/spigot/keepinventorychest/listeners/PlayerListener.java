@@ -1,7 +1,9 @@
 package com.cocoacaa.spigot.keepinventorychest.listeners;
 
-import com.cocoacaa.spigot.keepinventorychest.KeepInventoryChest;
+import com.cocoacaa.spigot.keepinventorychest.MessageSender;
+import com.cocoacaa.spigot.keepinventorychest.configs.MessagesConfig;
 import com.cocoacaa.spigot.keepinventorychest.utils.LocationUtils;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Chest;
@@ -16,15 +18,20 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
 
 import java.util.Objects;
 
 public class PlayerListener implements Listener {
-    private final KeepInventoryChest plugin;
+    private final Plugin plugin;
+    private final MessagesConfig messagesConfig;
+    private final MessageSender messageSender;
     private final NamespacedKey namespacedKey;
 
-    public PlayerListener(KeepInventoryChest plugin) {
+    public PlayerListener(Plugin plugin, MessagesConfig messagesConfig, MessageSender messageSender) {
         this.plugin = plugin;
+        this.messagesConfig = messagesConfig;
+        this.messageSender = messageSender;
         this.namespacedKey = new NamespacedKey(plugin, "keep-inventory-chest-drops");
     }
 
@@ -33,7 +40,7 @@ public class PlayerListener implements Listener {
         var originalLocation = event.getEntity().getLocation();
         var location = LocationUtils.getAvailableAirBlockLocation(originalLocation, 2);
         if (location == null) {
-            event.getEntity().sendMessage("No empty space");
+            messageSender.send(messagesConfig.getCannotCreateChest(), event.getEntity());
             return;
         }
         var block = location.getBlock();
@@ -78,6 +85,13 @@ public class PlayerListener implements Listener {
             playerHead.setItemMeta(meta);
 
             itemFrame.setItem(playerHead);
+
+            messageSender.send(
+                    messagesConfig
+                            .getChestCreated()
+                            .replace("{{location}}", LocationUtils.getFriendlyString(chest.getLocation())),
+                    event.getEntity()
+            );
         }, 1);
     }
 
