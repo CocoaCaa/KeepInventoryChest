@@ -29,40 +29,49 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        var drops = event.getDrops();
-        var location = event.getEntity().getLocation();
-        var block = location.getBlock();
-        block.setType(Material.CHEST);
-        var chest = (Chest) block.getState();
-        var inventory = chest.getBlockInventory();
-
-        chest.getPersistentDataContainer().set(namespacedKey, PersistentDataType.BYTE, (byte) 1);
-        chest.update();
-
-        var overflowItems = inventory.addItem(
-            drops.toArray(new ItemStack[0])
-        ).values().stream().map(ItemStack::clone).toList();
-
-        for (var drop : drops) {
+        var originalDrops = event.getDrops();
+        var drops = originalDrops
+                .stream()
+                .map(ItemStack::clone)
+                .toList();
+        for (var drop : originalDrops) {
             drop.setAmount(0);
         }
 
-        for (var overflowItem : overflowItems) {
-            Objects.requireNonNull(location.getWorld()).dropItem(location, overflowItem);
-        }
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            var location = event.getEntity().getLocation();
+            var block = location.getBlock();
+            block.setType(Material.CHEST);
+            var chest = (Chest) block.getState();
+            var inventory = chest.getBlockInventory();
 
-        var chestBlockData = (org.bukkit.block.data.type.Chest) chest.getBlockData();
-        var nextFacingLocation = location.clone().add(chestBlockData.getFacing().getDirection());
-        var itemFrame = Objects.requireNonNull(location.getWorld())
-                .spawn(nextFacingLocation, ItemFrame.class);
-        itemFrame.getPersistentDataContainer().set(namespacedKey, PersistentDataType.BYTE, (byte) 1);
+            chest.getPersistentDataContainer().set(namespacedKey, PersistentDataType.BYTE, (byte) 1);
+            chest.update();
 
-        var playerHead = new ItemStack(Material.PLAYER_HEAD);
-        var meta = (SkullMeta) playerHead.getItemMeta();
-        Objects.requireNonNull(meta).setOwningPlayer(event.getEntity());
-        playerHead.setItemMeta(meta);
+            var overflowItems = inventory
+                    .addItem(drops.toArray(new ItemStack[0]))
+                    .values()
+                    .stream()
+                    .map(ItemStack::clone)
+                    .toList();
 
-        itemFrame.setItem(playerHead);
+            for (var overflowItem : overflowItems) {
+                Objects.requireNonNull(location.getWorld()).dropItem(location, overflowItem);
+            }
+
+            var chestBlockData = (org.bukkit.block.data.type.Chest) chest.getBlockData();
+            var nextFacingLocation = location.clone().add(chestBlockData.getFacing().getDirection());
+            var itemFrame = Objects.requireNonNull(location.getWorld())
+                    .spawn(nextFacingLocation, ItemFrame.class);
+            itemFrame.getPersistentDataContainer().set(namespacedKey, PersistentDataType.BYTE, (byte) 1);
+
+            var playerHead = new ItemStack(Material.PLAYER_HEAD);
+            var meta = (SkullMeta) playerHead.getItemMeta();
+            Objects.requireNonNull(meta).setOwningPlayer(event.getEntity());
+            playerHead.setItemMeta(meta);
+
+            itemFrame.setItem(playerHead);
+        }, 1);
     }
 
     @EventHandler
@@ -99,8 +108,6 @@ public class PlayerListener implements Listener {
         if (!isKeepInventoryChestItemFrameEntity(event.getEntity())) {
             return;
         }
-
-        plugin.getLogger().info(event.getCause() + "");
 
         if (event.getCause() == HangingBreakEvent.RemoveCause.OBSTRUCTION) {
             event.setCancelled(true);
