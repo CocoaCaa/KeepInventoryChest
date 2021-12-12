@@ -1,6 +1,7 @@
 package com.cocoacaa.spigot.keepinventorychest.listeners;
 
 import com.cocoacaa.spigot.keepinventorychest.KeepInventoryChest;
+import com.cocoacaa.spigot.keepinventorychest.utils.LocationUtils;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Chest;
@@ -29,6 +30,14 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
+        var originalLocation = event.getEntity().getLocation();
+        var location = LocationUtils.getAvailableAirBlockLocation(originalLocation, 2);
+        if (location == null) {
+            event.getEntity().sendMessage("No empty space");
+            return;
+        }
+        var block = location.getBlock();
+
         var originalDrops = event.getDrops();
         var drops = originalDrops
                 .stream()
@@ -39,8 +48,6 @@ public class PlayerListener implements Listener {
         }
 
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            var location = event.getEntity().getLocation();
-            var block = location.getBlock();
             block.setType(Material.CHEST);
             var chest = (Chest) block.getState();
             var inventory = chest.getBlockInventory();
@@ -94,6 +101,16 @@ public class PlayerListener implements Listener {
         }
 
         block.setType(Material.AIR);
+        var itemFrameEntities = Objects
+                .requireNonNull(block.getLocation().getWorld())
+                .getNearbyEntities(
+                        block.getLocation(),
+                        1, 1, 1,
+                        this::isKeepInventoryChestItemFrameEntity
+                );
+        for (var itemFrameEntity : itemFrameEntities) {
+            itemFrameEntity.remove();
+        }
     }
 
     @EventHandler
